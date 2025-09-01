@@ -553,7 +553,7 @@
                 </div>
                 
                 <div id="year2-subject-inputs" class="subject-inputs">
-                    <!-- Subject inputs will be generated here -->
+                    
                 </div>
             </div>
             
@@ -577,7 +577,7 @@
                 </div>
                 
                 <div id="year3-subject-inputs" class="subject-inputs">
-                    <!-- Subject inputs will be generated here -->
+                   
                 </div>
             </div>
             
@@ -601,7 +601,7 @@
                 </div>
                 
                 <div id="year4-subject-inputs" class="subject-inputs">
-                    <!-- Subject inputs will be generated here -->
+                    
                 </div>
             </div>
             
@@ -615,7 +615,7 @@
                 <div id="teacherSpecialization">
                     <h3 style="margin: 1.5rem 0 1rem 0; color: var(--secondary);">Teacher Specialization Setup</h3>
                     <div id="teacherList">
-                        <!-- Teacher specialization options will be generated here -->
+                        
                     </div>
                 </div>
             </div>
@@ -642,7 +642,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <!-- Periods will be generated here -->
+                        
                     </tbody>
                 </table>
             </div>
@@ -684,14 +684,14 @@
         <div id="teachersCard" class="card animated" style="display: none;">
             <h2 class="card-title"><i class="fas fa-chalkboard-teacher"></i> Teacher Assignments & Workload</h2>
             <div id="teachersList">
-                <!-- Teacher cards will be generated here -->
+               
             </div>
         </div>
     </main>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Animate elements on page load
+            
             const animatedElements = document.querySelectorAll('.animated');
             animatedElements.forEach((el, index) => {
                 setTimeout(() => {
@@ -699,7 +699,7 @@
                 }, 100 * index);
             });
 
-            // Initialize data
+            
             const subjects = {
                 year2: {
                     major: [],
@@ -722,7 +722,7 @@
             const teacherWorkload = {};
             const timetable = {};
             
-            // Initialize timetable for 15 sections (5 per year)
+            
             for (let year = 2; year <= 4; year++) {
                 for (let section of ['A', 'B', 'C', 'D', 'E']) {
                     const key = `year${year}-${section}`;
@@ -730,12 +730,12 @@
                 }
             }
 
-            // Tab functionality
+            
             document.querySelectorAll('.year-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const year = this.dataset.year;
                     
-                    // Hide all tabs and remove active class from buttons
+                    
                     document.querySelectorAll('.tab-content').forEach(tab => {
                         tab.classList.remove('active');
                     });
@@ -743,7 +743,7 @@
                         btn.classList.remove('active');
                     });
                     
-                    // Show selected tab and set button as active
+                    
                     document.getElementById(`${year === 'teachers' ? 'teachers' : 'year' + year}-tab`).classList.add('active');
                     this.classList.add('active');
                     
@@ -753,7 +753,7 @@
                 });
             });
             
-            // Setup subject inputs for each year
+            
             document.getElementById('year2-setup-btn').addEventListener('click', function() {
                 setupSubjectInputs(2);
             });
@@ -766,7 +766,7 @@
                 setupSubjectInputs(4);
             });
             
-            // Setup subject inputs based on counts
+           
             function setupSubjectInputs(year) {
                 const majorCount = parseInt(document.getElementById(`year${year}-major-count`).value);
                 const minorCount = parseInt(document.getElementById(`year${year}-minor-count`).value);
@@ -775,7 +775,7 @@
                 const container = document.getElementById(`year${year}-subject-inputs`);
                 container.innerHTML = '';
                 
-                // Add major subjects
+                
                 for (let i = 1; i <= majorCount; i++) {
                     const div = document.createElement('div');
                     div.className = 'input-group';
@@ -786,7 +786,7 @@
                     container.appendChild(div);
                 }
                 
-                // Add minor subjects
+               
                 for (let i = 1; i <= minorCount; i++) {
                     const div = document.createElement('div');
                     div.className = 'input-group';
@@ -797,7 +797,7 @@
                     container.appendChild(div);
                 }
                 
-                // Add labs
+                
                 for (let i = 1; i <= labCount; i++) {
                     const div = document.createElement('div');
                     div.className = 'input-group';
@@ -809,27 +809,26 @@
                 }
             }
             
-            // Initialize subject inputs for all years
+            
             setupSubjectInputs(2);
             setupSubjectInputs(3);
             setupSubjectInputs(4);
             
-            // Display year tabs
+            
             document.querySelectorAll('[data-display-year]').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const year = this.dataset.displayYear;
                     
-                    // Hide all section buttons
+                    
                     document.querySelectorAll('.controls .section-btn').forEach(btn => {
                         btn.style.display = 'none';
                     });
                     
-                    // Show sections for selected year
+                    
                     document.querySelectorAll(`.section-btn[data-year="${year}"]`).forEach(btn => {
                         btn.style.display = 'inline-block';
                     });
                     
-                    // Set first section as active
                     const firstSection = document.querySelector(`.section-btn[data-year="${year}"]`);
                     if (firstSection) {
                         document.querySelectorAll('.section-btn').forEach(btn => {
@@ -839,7 +838,7 @@
                         displayTimetable(year, firstSection.dataset.section);
                     }
                     
-                    // Update active state of year buttons
+                    
                     document.querySelectorAll('[data-display-year]').forEach(btn => {
                         btn.classList.remove('active');
                     });
@@ -847,12 +846,12 @@
                 });
             });
 
-            // Initialize teacher specialization UI
+           
             function initTeacherSpecialization(count) {
                 const teacherList = document.getElementById('teacherList');
                 teacherList.innerHTML = '';
                 
-                // Get all subjects from all years
+                
                 const allSubjects = getAllSubjects();
                 
                 for (let i = 1; i <= count; i++) {
@@ -892,7 +891,7 @@
                 }
             }
 
-            // Get all subjects from all years
+           
             function getAllSubjects() {
                 const allSubjects = [];
                 
@@ -918,19 +917,19 @@
                 return allSubjects;
             }
 
-            // Get subject options for dropdown
+            
             function getSubjectOptions(allSubjects) {
                 return allSubjects.map(subj => `<option value="${subj}">${subj}</option>`).join('');
             }
 
-            // Generate teachers with their specializations
+            
             function generateTeachers(count) {
                 teachers.length = 0;
                 
                 for (let i = 1; i <= count; i++) {
                     const name = document.getElementById(`teacher${i}_name`).value;
                     
-                    // Get selected subjects from UI
+                    
                     const subject1 = document.getElementById(`teacher${i}_subject1`).value;
                     const subject2 = document.getElementById(`teacher${i}_subject2`).value;
                     const subject3 = document.getElementById(`teacher${i}_subject3`).value;
@@ -942,15 +941,15 @@
                         maxPeriodsPerDay: 3,
                         maxPeriodsPerWeek: 13,
                         assignedPeriods: 0,
-                        dailyLoad: [0, 0, 0, 0, 0] // Monday to Friday
+                        dailyLoad: [0, 0, 0, 0, 0] 
                     });
                     
-                    // Initialize workload tracking
+                    
                     teacherWorkload[i] = 0;
                 }
             }
 
-            // Collect subjects from input fields
+            
             function collectSubjects() {
                 for (let year = 2; year <= 4; year++) {
                     subjects[`year${year}`].major = [];
@@ -976,44 +975,44 @@
                 }
             }
 
-            // Generate timetable
+            
             function generateTimetable() {
                 collectSubjects();
                 const teacherCount = parseInt(document.getElementById('teacherCount').value);
                 generateTeachers(teacherCount);
                 
-                // Show loading
+                
                 const timetableCard = document.getElementById('timetableCard');
                 const teachersCard = document.getElementById('teachersCard');
                 timetableCard.style.display = 'block';
                 teachersCard.style.display = 'block';
                 
-                // Show loading state
+                
                 const generateBtn = document.getElementById('generateBtn');
                 generateBtn.innerHTML = '<div class="spinner"></div> Generating...';
                 
-                // Generate timetable after a short delay to show loading animation
+                
                 setTimeout(() => {
-                    // Generate timetable for all sections
+                    
                     for (let year = 2; year <= 4; year++) {
                         for (let section of ['A', 'B', 'C', 'D', 'E']) {
                             generateSectionTimetable(year, section);
                         }
                     }
                     
-                    // Display timetable for first section
+            
                     displayTimetable(2, 'A');
                     
-                    // Display teachers
+                
                     displayTeachers();
                     
-                    // Update stats
+                    
                     updateStats();
                     
-                    // Restore generate button
+                
                     generateBtn.innerHTML = '<i class="fas fa-cogs"></i> Generate Optimized Timetable';
                     
-                    // Show success message
+                    
                     const successMsg = document.createElement('div');
                     successMsg.className = 'success-message';
                     successMsg.innerHTML = '<i class="fas fa-check-circle"></i> Timetable generated successfully! All 600 classes allocated with no free periods.';
@@ -1025,31 +1024,31 @@
                 }, 1000);
             }
 
-            // Generate timetable for a specific section
+            
             function generateSectionTimetable(year, section) {
                 const key = `year${year}-${section}`;
                 
-                // Reset timetable for this section
+            
                 timetable[key] = Array(5).fill().map(() => Array(8).fill(null));
                 
-                // Get subjects for this year
+                
                 const majorSubjects = [...subjects[`year${year}`].major];
                 const minorSubjects = [...subjects[`year${year}`].minor];
                 const labs = [...subjects[`year${year}`].labs];
                 
-                // Calculate required classes per subject type
-                const totalPeriods = 5 * 8; // 5 days, 8 periods each
-                const labPeriods = labs.length * 2; // Each lab requires 2 consecutive periods
-                const remainingPeriods = totalPeriods - labPeriods - 5; // Subtract labs and lunch breaks
                 
-                // Distribute remaining periods between major and minor subjects (70% major, 30% minor)
+                const totalPeriods = 5 * 8; 
+                const labPeriods = labs.length * 2; 
+                const remainingPeriods = totalPeriods - labPeriods - 5; 
+                
+                
                 const majorPeriods = Math.floor(remainingPeriods * 0.7 / majorSubjects.length) * majorSubjects.length;
                 const minorPeriods = Math.floor(remainingPeriods * 0.3 / minorSubjects.length) * minorSubjects.length;
                 
-                // Create subject distribution
+                
                 const subjectDistribution = [];
                 
-                // Add major subjects
+                
                 for (const subject of majorSubjects) {
                     const count = majorPeriods / majorSubjects.length;
                     for (let i = 0; i < count; i++) {
@@ -1057,7 +1056,7 @@
                     }
                 }
                 
-                // Add minor subjects
+                
                 for (const subject of minorSubjects) {
                     const count = minorPeriods / minorSubjects.length;
                     for (let i = 0; i < count; i++) {
@@ -1065,21 +1064,21 @@
                     }
                 }
                 
-                // Shuffle the distribution
+                
                 shuffleArray(subjectDistribution);
                 
-                // Assign subjects to periods
+               
                 let subjectIndex = 0;
                 
                 for (let day = 0; day < 5; day++) {
-                    // Track which labs we've scheduled to avoid duplicates
+                    
                     const scheduledLabs = [];
                     
                     for (let period = 0; period < 8; period++) {
-                        // Skip if already assigned
+                        
                         if (timetable[key][day][period]) continue;
                         
-                        // Skip period 4 (lunch break)
+                        
                         if (period === 4) {
                             timetable[key][day][period] = {
                                 subject: "LUNCH BREAK",
@@ -1090,15 +1089,15 @@
                             continue;
                         }
                         
-                        // Schedule labs in consecutive periods (2 periods)
+                        
                         if (period <= 6 && scheduledLabs.length < labs.length) {
-                            // Find a lab that hasn't been scheduled today
+                            
                             const availableLabs = labs.filter(lab => !scheduledLabs.includes(lab));
                             if (availableLabs.length > 0) {
                                 const lab = availableLabs[Math.floor(Math.random() * availableLabs.length)];
                                 scheduledLabs.push(lab);
                                 
-                                // Schedule lab for two consecutive periods
+                               
                                 const teacher = findAvailableTeacher(lab, day, period, key);
                                 if (teacher) {
                                     timetable[key][day][period] = {
@@ -1115,7 +1114,7 @@
                                         isLab: true
                                     };
                                     
-                                    // Update teacher workload for both periods
+                                    
                                     teacher.assignedPeriods += 2;
                                     teacher.dailyLoad[day] += 2;
                                     teacherWorkload[teacher.id] += 2;
@@ -1124,7 +1123,7 @@
                             }
                         }
                         
-                        // Assign regular subjects
+                        
                         if (subjectIndex < subjectDistribution.length) {
                             const subject = subjectDistribution[subjectIndex++];
                             const teacher = findAvailableTeacher(subject, day, period, key);
@@ -1136,7 +1135,7 @@
                                     teacherId: teacher.id
                                 };
                                 
-                                // Update teacher workload
+                                
                                 teacher.assignedPeriods++;
                                 teacher.dailyLoad[day]++;
                                 teacherWorkload[teacher.id]++;
@@ -1146,7 +1145,7 @@
                 }
             }
 
-            // Fisher-Yates shuffle algorithm
+            
             function shuffleArray(array) {
                 for (let i = array.length - 1; i > 0; i--) {
                     const j = Math.floor(Math.random() * (i + 1));
@@ -1155,9 +1154,9 @@
                 return array;
             }
 
-            // Find available teacher for a subject
+            
             function findAvailableTeacher(subject, day, period, sectionKey) {
-                // Filter teachers who can teach this subject
+                
                 const eligibleTeachers = teachers.filter(teacher => 
                     teacher.subjects.includes(subject) && 
                     teacher.assignedPeriods < teacher.maxPeriodsPerWeek &&
@@ -1167,13 +1166,13 @@
                 
                 if (eligibleTeachers.length === 0) return null;
                 
-                // Sort by workload (least loaded first)
+                
                 eligibleTeachers.sort((a, b) => a.assignedPeriods - b.assignedPeriods);
                 
                 return eligibleTeachers[0];
             }
 
-            // Check if teacher is already busy at this time
+            
             function isTeacherBusy(teacherId, day, period, currentSection) {
                 for (const sectionKey in timetable) {
                     if (sectionKey === currentSection) continue;
@@ -1186,16 +1185,16 @@
                 return false;
             }
 
-            // Display timetable for a section
+            
             function displayTimetable(year, section) {
                 const key = `year${year}-${section}`;
                 const timetableBody = document.querySelector('#timetableCard tbody');
                 timetableBody.innerHTML = '';
                 
-                // Update title
+                
                 document.getElementById('currentSection').textContent = `Year ${year} - Section ${section}`;
                 
-                // Update section buttons
+                
                 document.querySelectorAll('.section-btn').forEach(btn => {
                     btn.classList.remove('active');
                     if (btn.dataset.year == year && btn.dataset.section === section) {
@@ -1203,11 +1202,11 @@
                     }
                 });
                 
-                // Generate periods (8 per day)
+                
                 for (let period = 0; period < 8; period++) {
                     const row = document.createElement('tr');
                     
-                    // Time label based on period number
+                    
                     let timeLabel = '';
                     switch(period) {
                         case 0: timeLabel = '8:00-9:00'; break;
@@ -1222,7 +1221,7 @@
                     
                     row.innerHTML = `<td>${timeLabel}</td>`;
                     
-                    // Add subjects for each day
+                   
                     for (let day = 0; day < 5; day++) {
                         const cell = timetable[key][day][period];
                         if (cell) {
@@ -1234,7 +1233,7 @@
                                 row.innerHTML += `<td>${cell.subject}<br><small>${cell.teacher}</small></td>`;
                             }
                         } else {
-                            // This should not happen in the optimized version
+                            
                             row.innerHTML += '<td class="free-period">Free<br><small>Error in scheduling</small></td>';
                         }
                     }
@@ -1242,11 +1241,11 @@
                     timetableBody.appendChild(row);
                 }
                 
-                // Update stats
+                
                 updateStats();
             }
 
-            // Display teachers in the teachers card
+            
             function displayTeachers() {
                 const teachersList = document.getElementById('teachersList');
                 teachersList.innerHTML = '';
@@ -1271,7 +1270,7 @@
                 });
             }
             
-            // Check if subject is a lab
+            
             function isLab(subject) {
                 for (let year = 2; year <= 4; year++) {
                     if (subjects[`year${year}`].labs.includes(subject)) return true;
@@ -1279,7 +1278,7 @@
                 return false;
             }
 
-            // Update statistics
+            
             function updateStats() {
                 let assignedClasses = 0;
                 let freePeriods = 0;
@@ -1309,20 +1308,20 @@
                 document.getElementById('freePeriods').textContent = freePeriods;
             }
 
-            // Initialize teacher specialization UI
+            
             initTeacherSpecialization(24);
 
-            // Event listeners
+            
             document.getElementById('generateBtn').addEventListener('click', generateTimetable);
             
-            // Section switch event listeners
+            
             document.querySelectorAll('.section-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
                     displayTimetable(parseInt(this.dataset.year), this.dataset.section);
                 });
             });
             
-            // Teacher count change event
+
             document.getElementById('teacherCount').addEventListener('change', function() {
                 initTeacherSpecialization(parseInt(this.value));
             });
