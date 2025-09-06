@@ -8,12 +8,12 @@
     <link rel="stylesheet" href="style.css">
     
     <script type="module">
-        // Import the functions you need from the SDKs you need
+        
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-app.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-analytics.js";
         import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-firestore.js";
         
-        // Your web app's Firebase configuration (as provided)
+        
         const firebaseConfig = {
             apiKey: "AIzaSyCGAV49jA7NBIB0MSHUIWc_1abSrIiRdUo",
             authDomain: "periodperfect-f7909.firebaseapp.com",
@@ -24,12 +24,12 @@
             measurementId: "G-0459NGGPFH"
         };
 
-        // Initialize Firebase
+       
         const app = initializeApp(firebaseConfig);
         const analytics = getAnalytics(app);
         const db = getFirestore(app);
         
-        // Make Firebase available globally for script.js
+        
         window.firebase = {
             db, doc, setDoc, getDoc
         };
