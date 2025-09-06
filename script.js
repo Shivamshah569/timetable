@@ -1,8 +1,6 @@
-
 let sections = [];
 let subjects = {};
 let teachers = [];
-let teacherWorkload = {};
 let timetable = {};
 let firebaseInitialized = false;
 
@@ -25,30 +23,40 @@ document.addEventListener('DOMContentLoaded', function() {
             el.classList.add('visible');
         }, 100 * index);
     });
-
     
     document.getElementById('setupSectionsBtn').addEventListener('click', function() {
         const sectionCount = parseInt(document.getElementById('sectionCount').value);
         setupSections(sectionCount);
     });
 
-    
-    document.getElementById('saveBtn').addEventListener('click', saveToFirebase);
+    document.getElementById('saveBtn').addEventListener('click', async () => {
+        collectAllConfigurationData();
+        await saveToFirebase();
+        alert('Configuration saved to cloud successfully!');
+    });
     document.getElementById('loadBtn').addEventListener('click', loadFromFirebase);
     
-
     document.getElementById('generateBtn').addEventListener('click', generateTimetable);
-    document.getElementById('teacherCount').addEventListener('change', function() {
-        initTeacherSpecialization(parseInt(this.value));
-    });
+    
+    // FEATURE: Add listener for the new "Add Teacher" button
+    document.getElementById('addTeacherBtn').addEventListener('click', () => addTeacherField());
 });
 
 
+// FEATURE: Handles clicks on the dynamically added "Remove" buttons
+document.getElementById('teacherList').addEventListener('click', function(e) {
+    if (e.target && e.target.closest('.remove-teacher-btn')) {
+        e.target.closest('.teacher-input-group').remove();
+    }
+});
 
+
+/**
+ * MODIFIED: Now collects data from a dynamic list of teachers instead of a fixed count.
+ */
 function collectAllConfigurationData() {
     const sectionCount = parseInt(document.getElementById('sectionCount').value);
-    const teacherCount = parseInt(document.getElementById('teacherCount').value);
-
+    
     sections = [];
     for (let i = 1; i <= sectionCount; i++) {
         sections.push({
@@ -67,7 +75,8 @@ function collectAllConfigurationData() {
             for (let j = 1; j <= count; j++) {
                 const input = document.getElementById(`section-${i}-${type}-${j}`);
                 if (input && input.value) {
-                    const preference = input.parentElement.querySelector('.preference-btn.active').dataset.pref;
+                    const prefButton = input.parentElement.querySelector('.preference-btn.active');
+                    const preference = prefButton ? prefButton.dataset.pref : 'any';
                     subjectArray.push({ name: input.value, preference: preference });
                 }
             }
@@ -78,17 +87,20 @@ function collectAllConfigurationData() {
         subjects[sectionId].labs = getSubjectData('lab', parseInt(document.getElementById(`section-${i}-lab-count`).value));
     }
 
+    // Collect teachers from the DOM elements that actually exist
+    const teacherDivs = document.querySelectorAll('#teacherList .teacher-input-group');
     teachers = [];
-    for (let i = 1; i <= teacherCount; i++) {
-        const name = document.getElementById(`teacher${i}_name`)?.value;
+    teacherDivs.forEach(div => {
+        const id = div.dataset.teacherId;
+        const name = div.querySelector(`#teacher${id}_name`)?.value;
         if (name) {
             teachers.push({
-                id: i,
+                id: parseInt(id),
                 name: name,
                 subjects: [
-                    document.getElementById(`teacher${i}_subject1`).value,
-                    document.getElementById(`teacher${i}_subject2`).value,
-                    document.getElementById(`teacher${i}_subject3`).value
+                    div.querySelector(`#teacher${id}_subject1`).value,
+                    div.querySelector(`#teacher${id}_subject2`).value,
+                    div.querySelector(`#teacher${id}_subject3`).value
                 ].filter(Boolean),
                 maxPeriodsPerDay: 3,
                 maxPeriodsPerWeek: 14,
@@ -96,7 +108,7 @@ function collectAllConfigurationData() {
                 dailyLoad: [0, 0, 0, 0, 0]
             });
         }
-    }
+    });
 }
 
 function setupSections(count) {
@@ -117,7 +129,7 @@ function setupSections(count) {
     document.getElementById('subjectConfiguration').style.display = 'block';
     document.getElementById('teacherConfiguration').style.display = 'block';
     setupSubjectTabs(count);
-    initTeacherSpecialization(parseInt(document.getElementById('teacherCount').value));
+    initTeacherSpecialization(); // No longer needs a count
 }
 
 function setupSubjectTabs(sectionCount) {
@@ -144,7 +156,7 @@ function setupSubjectTabs(sectionCount) {
             <h4 style="margin-bottom: 1rem;">Subjects for Section ${i}</h4>
             <div class="config-controls">
                 <div class="input-group"><label>Major Subjects</label><input type="number" id="section-${i}-major-count" min="1" value="5" max="10"></div>
-                <div class="input-group"><label>Minor Subjects (Aptitude, etc.)</label><input type="number" id="section-${i}-minor-count" min="1" value="3" max="10"></div>
+                <div class="input-group"><label>Minor Subjects</label><input type="number" id="section-${i}-minor-count" min="1" value="3" max="10"></div>
                 <div class="input-group"><label>Labs</label><input type="number" id="section-${i}-lab-count" min="1" value="2" max="5"></div>
                 <button class="config-btn" id="section-${i}-setup-btn"><i class="fas fa-plus"></i> Setup Subjects</button>
             </div>
@@ -152,7 +164,7 @@ function setupSubjectTabs(sectionCount) {
         subjectTabContent.appendChild(tabContent);
         document.getElementById(`section-${i}-setup-btn`).addEventListener('click', () => setupSectionSubjects(i));
     }
-    setupSectionSubjects(1);
+    if (sectionCount > 0) setupSectionSubjects(1);
 }
 
 function setupSectionSubjects(sectionNum) {
@@ -185,26 +197,61 @@ function setupSectionSubjects(sectionNum) {
     for (let i = 1; i <= labCount; i++) createSubjectInput('lab', i, 'Lab');
 }
 
-function initTeacherSpecialization(count) {
+/**
+ * FEATURE: This new function adds a single teacher field to the list.
+ * It can be called with data (on load) or without (when user clicks '+').
+ */
+function addTeacherField(teacherData = null) {
     const teacherList = document.getElementById('teacherList');
-    teacherList.innerHTML = '';
+    // Generate a unique ID for the new teacher field
+    const teacherId = Date.now(); 
+
     const allSubjects = getAllSubjects();
     const subjectOptions = `<option value="">None</option>` + allSubjects.map(subj => `<option value="${subj}">${subj}</option>`).join('');
-    for (let i = 1; i <= count; i++) {
-        const teacherDiv = document.createElement('div');
-        teacherDiv.className = 'input-group';
-        teacherDiv.innerHTML = `
-            <label>Teacher ${i} Name</label>
-            <input type="text" id="teacher${i}_name" placeholder="Enter teacher name" value="Teacher ${i}">
-            <label style="margin-top: 1rem;">Specialization Subjects</label>
-            <div class="teacher-specialization">
-                <div class="teacher-option"><strong>Primary</strong><select id="teacher${i}_subject1">${subjectOptions}</select></div>
-                <div class="teacher-option"><strong>Secondary</strong><select id="teacher${i}_subject2">${subjectOptions}</select></div>
-                <div class="teacher-option"><strong>Tertiary</strong><select id="teacher${i}_subject3">${subjectOptions}</select></div>
-            </div>`;
-        teacherList.appendChild(teacherDiv);
+    
+    const teacherDiv = document.createElement('div');
+    teacherDiv.className = 'teacher-input-group'; // New class for styling
+    teacherDiv.dataset.teacherId = teacherId; // Store the unique ID
+
+    teacherDiv.innerHTML = `
+        <div class="teacher-header">
+             <label>Teacher Name</label>
+             <button type="button" class="remove-teacher-btn"><i class="fas fa-trash-alt"></i></button>
+        </div>
+        <input type="text" id="teacher${teacherId}_name" placeholder="Enter teacher name">
+        <label style="margin-top: 1rem;">Specialization Subjects</label>
+        <div class="teacher-specialization">
+            <div class="teacher-option"><strong>Primary</strong><select id="teacher${teacherId}_subject1">${subjectOptions}</select></div>
+            <div class="teacher-option"><strong>Secondary</strong><select id="teacher${teacherId}_subject2">${subjectOptions}</select></div>
+            <div class="teacher-option"><strong>Tertiary</strong><select id="teacher${teacherId}_subject3">${subjectOptions}</select></div>
+        </div>`;
+    teacherList.appendChild(teacherDiv);
+
+    // If we're loading data, pre-fill the fields
+    if (teacherData) {
+        teacherDiv.querySelector(`#teacher${teacherId}_name`).value = teacherData.name;
+        teacherDiv.querySelector(`#teacher${teacherId}_subject1`).value = teacherData.subjects[0] || '';
+        teacherDiv.querySelector(`#teacher${teacherId}_subject2`).value = teacherData.subjects[1] || '';
+        teacherDiv.querySelector(`#teacher${teacherId}_subject3`).value = teacherData.subjects[2] || '';
+    } else {
+        // Default name for a new field
+        const teacherCount = teacherList.children.length;
+        teacherDiv.querySelector(`#teacher${teacherId}_name`).value = `Teacher ${teacherCount}`;
     }
 }
+
+/**
+ * MODIFIED: No longer needs a count. It just clears and repopulates from the global `teachers` array.
+ */
+function initTeacherSpecialization() {
+    const teacherList = document.getElementById('teacherList');
+    teacherList.innerHTML = '';
+    // If teachers data already exists (from a load), create fields for them
+    if (teachers && teachers.length > 0) {
+        teachers.forEach(teacher => addTeacherField(teacher));
+    }
+}
+
 
 function getAllSubjects() {
     const allSubjects = new Set();
@@ -222,23 +269,28 @@ function generateTimetable() {
     timetable = {};
 
     const generateBtn = document.getElementById('generateBtn');
+    generateBtn.disabled = true;
     generateBtn.innerHTML = '<div class="spinner"></div> Generating...';
 
     setTimeout(() => { 
-        sections.forEach(section => {
-            generateSectionTimetable(section.id);
-        });
-        
-        
-        document.getElementById('timetableCard').style.display = 'block';
-        document.getElementById('teachersCard').style.display = 'block';
-        if (sections.length > 0) {
-            displayTimetable(sections[0].id); 
+        try {
+            sections.forEach(section => {
+                generateSectionTimetable(section.id);
+            });
+            
+            document.getElementById('timetableCard').style.display = 'block';
+            document.getElementById('teachersCard').style.display = 'block';
+            if (sections.length > 0) displayTimetable(sections[0].id); 
+            displayTeachers();
+            updateStats();
+
+        } catch (error) {
+            console.error("Error during generation: ", error);
+            alert("An error occurred. Check console for details.");
+        } finally {
+            generateBtn.disabled = false;
+            generateBtn.innerHTML = '<i class="fas fa-cogs"></i> Generate Perfect Timetable';
         }
-        displayTeachers();
-        updateStats();
-        generateBtn.innerHTML = '<i class="fas fa-cogs"></i> Generate Perfect Timetable';
-        saveToFirebase();
     }, 100);
 }
 
@@ -252,6 +304,7 @@ function isSubjectOnDay(subjectName, day, grid) {
     return false;
 }
 
+
 function generateSectionTimetable(sectionId) {
     const grid = Array(5).fill(null).map(() => Array(8).fill(null)); 
     let availableSlots = [];
@@ -259,40 +312,23 @@ function generateSectionTimetable(sectionId) {
 
     const sectionSubjects = subjects[sectionId];
     
-    
-    sectionSubjects.labs.forEach(lab => {
-        placeSubject(lab.name, 1, grid, availableSlots, true);
-    });
-    
-    
+    sectionSubjects.labs.forEach(lab => placeSubject(lab.name, 1, grid, availableSlots, true));
     const mentorSubject = sectionSubjects.minor.find(s => s.name.toLowerCase().includes('mentor'));
-    if (mentorSubject) {
-        placeSubject(mentorSubject.name, 1, grid, availableSlots, false);
-    }
-    
-   
+    if (mentorSubject) placeSubject(mentorSubject.name, 1, grid, availableSlots, false);
     const otherMinors = sectionSubjects.minor.filter(s => !s.name.toLowerCase().includes('mentor'));
-    otherMinors.forEach(minor => {
-        placeSubject(minor.name, 2, grid, availableSlots, false);
-    });
-    
+    otherMinors.forEach(minor => placeSubject(minor.name, 2, grid, availableSlots, false));
     
     const majorSubjectNames = sectionSubjects.major.map(m => m.name);
     const majorSubjectCounts = {};
     majorSubjectNames.forEach(name => majorSubjectCounts[name] = 0);
 
-    availableSlots.sort(() => Math.random() - 0.5); 
-    
-    availableSlots.forEach(({ day, period }) => {
+    const initialSlotsForMajors = [...availableSlots];
+    initialSlotsForMajors.forEach(({ day, period }) => {
         if (!grid[day][period]) {
-            
             const sortedMajors = majorSubjectNames.sort((a, b) => majorSubjectCounts[a] - majorSubjectCounts[b]);
-            
             for (const subjectName of sortedMajors) {
-                
                 if (!isSubjectOnDay(subjectName, day, grid)) {
-                    
-                    if (placeSubject(subjectName, 1, grid, [{ day, period }], false)) {
+                    if (placeSubject(subjectName, 1, grid, availableSlots, false)) {
                         majorSubjectCounts[subjectName]++;
                         break; 
                     }
@@ -301,34 +337,64 @@ function generateSectionTimetable(sectionId) {
         }
     });
 
-    
-    availableSlots = availableSlots.filter(({day, period}) => !grid[day][period]);
+    // DEFINITIVE FIX: Logic to fill ALL empty periods, relaxing daily limit if necessary.
+    const totalSubjectCount = sectionSubjects.major.length + sectionSubjects.minor.length + sectionSubjects.labs.length;
+    if (totalSubjectCount > 10 && majorSubjectNames.length > 0) {
+        const remainingSlots = [];
+        for (let day = 0; day < 5; day++) {
+            for (let period = 0; period < 8; period++) {
+                if (!grid[day][period]) {
+                    remainingSlots.push({ day, period });
+                }
+            }
+        }
+        
+        remainingSlots.forEach(({ day, period }) => {
+            const leastAssignedMajor = majorSubjectNames.sort((a, b) => majorSubjectCounts[a] - majorSubjectCounts[b])[0];
+            
+            // Step 1: Try to find a teacher within normal limits
+            let teacher = findAvailableTeacher(leastAssignedMajor, day, period, false, false);
+            
+            // Step 2: If no one is found, try again but relax the daily limit (LAST RESORT)
+            if (!teacher) {
+                teacher = findAvailableTeacher(leastAssignedMajor, day, period, false, true);
+            }
+            
+            // If a teacher is found (either normally or with relaxed limits), place the subject
+            if (teacher) {
+                grid[day][period] = { subject: leastAssignedMajor, teacher: teacher.name, teacherId: teacher.id };
+                teacher.assignedPeriods++;
+                teacher.dailyLoad[day]++;
+                majorSubjectCounts[leastAssignedMajor]++;
+            } else {
+                 console.log(`Could not find any teacher for ${leastAssignedMajor} on Day ${day}, Period ${period}. Period will remain free.`);
+            }
+        });
+    }
 
-    
     timetable[sectionId] = grid.map(day => [...day.slice(0, 4), { subject: "LUNCH", isBreak: true }, ...day.slice(4, 8)]);
 }
+
 
 function placeSubject(subjectName, count, grid, availableSlots, isLab) {
     let placedCount = 0;
     for (let i = 0; i < count; i++) {
         let placedThisIteration = false;
         availableSlots.sort(() => Math.random() - 0.5); 
-
         for (let j = 0; j < availableSlots.length; j++) {
             const { day, period } = availableSlots[j];
             if (grid[day][period]) continue;
-
-            const teacher = findAvailableTeacher(subjectName, day, period, isLab);
+            const teacher = findAvailableTeacher(subjectName, day, period, isLab, false);
             if (teacher) {
                 if (isLab) {
                     if (period < 7 && (period !== 3) && !grid[day][period + 1]) {
                         grid[day][period] = { subject: subjectName, teacher: teacher.name, teacherId: teacher.id, isLab: true };
                         grid[day][period + 1] = { subject: subjectName, teacher: teacher.name, teacherId: teacher.id, isLab: true };
                         teacher.assignedPeriods += 2; teacher.dailyLoad[day] += 2;
-                        
+                        const currentSlotIndex = availableSlots.findIndex(s => s.day === day && s.period === period);
+                        if(currentSlotIndex > -1) availableSlots.splice(currentSlotIndex, 1);
                         const nextSlotIndex = availableSlots.findIndex(s => s.day === day && s.period === period + 1);
                         if (nextSlotIndex > -1) availableSlots.splice(nextSlotIndex, 1);
-                        availableSlots.splice(j, 1);
                         placedThisIteration = true; break;
                     }
                 } else {
@@ -344,12 +410,17 @@ function placeSubject(subjectName, count, grid, availableSlots, isLab) {
     return placedCount > 0; 
 }
 
-function findAvailableTeacher(subjectName, day, period, isLab) {
+// DEFINITIVE FIX: Added a new parameter 'relaxDailyLimit'
+function findAvailableTeacher(subjectName, day, period, isLab, relaxDailyLimit = false) {
     const eligibleTeachers = teachers.filter(t => {
+        // This is the new, more flexible daily limit check
+        const dailyLimit = relaxDailyLimit ? t.maxPeriodsPerDay + 1 : t.maxPeriodsPerDay;
+        
         const hasSubject = t.subjects.includes(subjectName);
-        const workloadOk = t.assignedPeriods < t.maxPeriodsPerWeek && t.dailyLoad[day] < t.maxPeriodsPerDay;
-        const labWorkloadOk = isLab ? t.assignedPeriods < (t.maxPeriodsPerWeek - 1) && t.dailyLoad[day] < (t.maxPeriodsPerDay - 1) : true;
+        const workloadOk = t.assignedPeriods < t.maxPeriodsPerWeek && t.dailyLoad[day] < dailyLimit;
+        const labWorkloadOk = isLab ? t.assignedPeriods < (t.maxPeriodsPerWeek - 1) && t.dailyLoad[day] < (dailyLimit - 1) : true;
         const isFree = !isTeacherBusy(t.id, day, period) && (!isLab || !isTeacherBusy(t.id, day, period + 1));
+        
         return hasSubject && workloadOk && labWorkloadOk && isFree;
     });
 
@@ -357,10 +428,8 @@ function findAvailableTeacher(subjectName, day, period, isLab) {
 
     const primaryTeachers = eligibleTeachers.filter(t => t.subjects[0] === subjectName);
     const otherTeachers = eligibleTeachers.filter(t => t.subjects[0] !== subjectName);
-    
     primaryTeachers.sort((a,b) => a.assignedPeriods - b.assignedPeriods);
     otherTeachers.sort((a,b) => a.assignedPeriods - b.assignedPeriods);
-
     if (primaryTeachers.length > 0 && (Math.random() < 0.80 || otherTeachers.length === 0)) {
         return primaryTeachers[0];
     } 
@@ -377,16 +446,13 @@ function isTeacherBusy(teacherId, day, period) {
     return false;
 }
 
-
-
 function displayTimetable(sectionId) {
     const timetableBody = document.querySelector('#timetableCard tbody');
     timetableBody.innerHTML = '';
     const section = sections.find(s => s.id === sectionId);
     document.getElementById('currentSection').textContent = section ? section.name : sectionId;
-    
     const sectionButtons = document.getElementById('sectionButtons');
-    if(sectionButtons.innerHTML === "" || sectionButtons.children.length !== sections.length) { // Rebuild buttons if needed
+    if(sectionButtons.innerHTML === "" || sectionButtons.children.length !== sections.length) {
         sectionButtons.innerHTML = "";
         sections.forEach((sec, index) => {
             const button = document.createElement('button');
@@ -401,7 +467,6 @@ function displayTimetable(sectionId) {
             sectionButtons.appendChild(button);
         });
     }
-
     const currentTimetable = timetable[sectionId] || Array(5).fill(null).map(() => Array(9).fill(null));
     for (let period = 0; period < 9; period++) {
         const row = document.createElement('tr');
@@ -442,7 +507,6 @@ function updateStats() {
     let totalTeacherLoad = 0;
     const sectionCount = sections.length;
     const totalClasses = sectionCount * 5 * 8;
-    
     for (const sectionKey in timetable) {
         if (timetable[sectionKey]) {
             for (let day = 0; day < 5; day++) {
@@ -456,21 +520,17 @@ function updateStats() {
     }
     teachers.forEach(teacher => totalTeacherLoad += teacher.assignedPeriods);
     const avgTeacherLoad = teachers.length > 0 ? (totalTeacherLoad / teachers.length).toFixed(1) : 0;
-    
     document.getElementById('totalClasses').textContent = totalClasses;
     document.getElementById('assignedClasses').textContent = assignedClasses;
     document.getElementById('teacherLoad').textContent = avgTeacherLoad;
     document.getElementById('freePeriods').textContent = totalClasses - assignedClasses;
 }
 
-
-
 async function saveToFirebase() {
     if (!firebaseInitialized) {
         alert("Firebase is not initialized. Please wait.");
         return;
     }
-    collectAllConfigurationData();
     try {
         const saveData = { sections, subjects, teachers, timetable, lastUpdated: new Date().toISOString() };
         await window.firebase.setDoc(window.firebase.doc(window.firebase.db, "timetable", "current"), saveData);
@@ -503,13 +563,13 @@ async function loadFromFirebase() {
         }
     } catch (error) {
         console.error("Error loading from Firebase:", error);
+        alert("Failed to load data from Firebase.");
     }
 }
 
 function updateUIWithLoadedData() {
     if (!sections || sections.length === 0) return;
     document.getElementById('sectionCount').value = sections.length;
-    document.getElementById('teacherCount').value = teachers.length;
     setupSections(sections.length);
     sections.forEach((section, index) => {
         const i = index + 1;
@@ -543,12 +603,6 @@ function updateUIWithLoadedData() {
             populateInputs('lab', sectionSubjects.labs);
         }
     });
-    initTeacherSpecialization(teachers.length);
-    teachers.forEach((teacher, index) => {
-        const i = index + 1;
-        document.getElementById(`teacher${i}_name`).value = teacher.name;
-        document.getElementById(`teacher${i}_subject1`).value = teacher.subjects[0] || '';
-        document.getElementById(`teacher${i}_subject2`).value = teacher.subjects[1] || '';
-        document.getElementById(`teacher${i}_subject3`).value = teacher.subjects[2] || '';
-    });
+    // MODIFIED: This now populates the dynamic teacher list from loaded data
+    initTeacherSpecialization();
 }

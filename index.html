@@ -3,16 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Timetable Master - Firebase Integrated</title>
+    <title>Timetable Master - Intelligent Scheduler</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
     
     <script type="module">
-        
+        // --- Firebase Configuration ---
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-app.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-analytics.js";
         import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-firestore.js";
-        
         
         const firebaseConfig = {
             apiKey: "AIzaSyCGAV49jA7NBIB0MSHUIWc_1abSrIiRdUo",
@@ -24,15 +23,11 @@
             measurementId: "G-0459NGGPFH"
         };
 
-       
         const app = initializeApp(firebaseConfig);
         const analytics = getAnalytics(app);
         const db = getFirestore(app);
         
-        
-        window.firebase = {
-            db, doc, setDoc, getDoc
-        };
+        window.firebase = { db, doc, setDoc, getDoc };
         
         console.log("Firebase initialized successfully!");
     </script>
@@ -45,25 +40,34 @@
     <header>
         <div class="container">
             <h1><i class="fas fa-calendar-alt"></i> Timetable Master</h1>
-            <div class="tagline">Firebase Integrated - Your data is now saved automatically!</div>
-            <p class="subtitle">Advanced timetable generation with cloud storage and no data loss</p>
+            <p class="subtitle">Effortlessly create balanced, clash-free schedules with our intelligent, cloud-powered generator.</p>
         </div>
     </header>
 
     <main class="container">
         <div class="card animated">
-            <h2 class="card-title"><i class="fas fa-cog"></i> Configuration</h2>
+            <h2 class="card-title"><i class="fas fa-cog"></i> Configuration Panel</h2>
             
-            <div class="requirement">
-                <h3><i class="fas fa-info-circle"></i> Timetable Structure</h3>
-                <p>9 periods per day: 4 before lunch, 1 lunch break, 4 after lunch</p>
-                <p>Each teacher: max 3 periods/day, 13 periods/week</p>
-                <div class="feature-highlight">All data is automatically saved to Firebase Firestore</div>
+            <div class="feature-grid">
+                <div class="feature-item">
+                    <i class="fas fa-cogs"></i>
+                    <h4>Intelligent Scheduling</h4>
+                    <p>Automatically balances teacher workload and subject distribution.</p>
+                </div>
+                <div class="feature-item">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <h4>Cloud Sync</h4>
+                    <p>Your configuration is saved securely online. Never lose your data.</p>
+                </div>
+                <div class="feature-item">
+                    <i class="fas fa-users-cog"></i>
+                    <h4>Dynamic Control</h4>
+                    <p>Easily add or remove teachers and subjects on the fly.</p>
+                </div>
             </div>
             
             <div class="section-config">
-                <h3 style="margin-bottom: 1rem; color: var(--secondary);">Section Configuration</h3>
-                
+                <h3 class="config-heading">Section & Subject Setup</h3>
                 <div class="config-controls">
                     <div class="input-group">
                         <label for="sectionCount">Number of Sections</label>
@@ -71,32 +75,21 @@
                     </div>
                     <button class="config-btn" id="setupSectionsBtn"><i class="fas fa-plus"></i> Setup Sections</button>
                 </div>
-                
-                <div id="sectionsContainer">
-                    </div>
+                <div id="sectionsContainer"></div>
             </div>
             
             <div id="subjectConfiguration" style="display: none;">
-                <h3 style="margin-bottom: 1rem; color: var(--secondary);">Subject Configuration</h3>
-                <div id="subjectTabs" class="controls">
-                    </div>
-                
-                <div id="subjectTabContent">
-                    </div>
+                <div id="subjectTabs" class="controls"></div>
+                <div id="subjectTabContent"></div>
             </div>
             
-            <div id="teacherConfiguration" style="display: none;">
-                <h3 style="margin-bottom: 1rem; color: var(--secondary);">Teacher Management</h3>
-                <div class="input-group">
-                    <label for="teacherCount">Number of Teachers</label>
-                    <input type="number" id="teacherCount" min="5" value="15" max="40">
+            <div id="teacherConfiguration" style="display: none;" class="section-config">
+                <div class="config-heading-wrapper">
+                    <h3 class="config-heading">Teacher Management</h3>
+                    <button id="addTeacherBtn" class="add-btn"><i class="fas fa-plus"></i> Add Teacher</button>
                 </div>
-                
-                <div id="teacherSpecialization">
-                    <h3 style="margin: 1.5rem 0 1rem 0; color: var(--secondary);">Teacher Specialization Setup</h3>
-                    <div id="teacherList">
-                        </div>
-                </div>
+                <div id="teacherList">
+                    </div>
             </div>
             
             <div class="controls">
@@ -126,18 +119,16 @@
                             <th>Friday</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        </tbody>
+                    <tbody></tbody>
                 </table>
             </div>
             
-            <div class="controls" id="sectionButtons">
-                </div>
+            <div class="controls" id="sectionButtons"></div>
             
             <div class="stats">
                 <div class="stat-box">
                     <h3 id="totalClasses">0</h3>
-                    <p>Total Classes Weekly</p>
+                    <p>Total Classes</p>
                 </div>
                 <div class="stat-box">
                     <h3 id="assignedClasses">0</h3>
@@ -156,8 +147,7 @@
 
         <div id="teachersCard" class="card animated" style="display: none;">
             <h2 class="card-title"><i class="fas fa-chalkboard-teacher"></i> Teacher Assignments & Workload</h2>
-            <div id="teachersList">
-                </div>
+            <div id="teachersList"></div>
         </div>
     </main>
 
