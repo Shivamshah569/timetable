@@ -38,12 +38,10 @@ document.addEventListener('DOMContentLoaded', function() {
     
     document.getElementById('generateBtn').addEventListener('click', generateTimetable);
     
-    // FEATURE: Add listener for the new "Add Teacher" button
     document.getElementById('addTeacherBtn').addEventListener('click', () => addTeacherField());
 });
 
 
-// FEATURE: Handles clicks on the dynamically added "Remove" buttons
 document.getElementById('teacherList').addEventListener('click', function(e) {
     if (e.target && e.target.closest('.remove-teacher-btn')) {
         e.target.closest('.teacher-input-group').remove();
@@ -51,9 +49,6 @@ document.getElementById('teacherList').addEventListener('click', function(e) {
 });
 
 
-/**
- * MODIFIED: Now collects data from a dynamic list of teachers instead of a fixed count.
- */
 function collectAllConfigurationData() {
     const sectionCount = parseInt(document.getElementById('sectionCount').value);
     
@@ -87,7 +82,6 @@ function collectAllConfigurationData() {
         subjects[sectionId].labs = getSubjectData('lab', parseInt(document.getElementById(`section-${i}-lab-count`).value));
     }
 
-    // Collect teachers from the DOM elements that actually exist
     const teacherDivs = document.querySelectorAll('#teacherList .teacher-input-group');
     teachers = [];
     teacherDivs.forEach(div => {
@@ -129,7 +123,7 @@ function setupSections(count) {
     document.getElementById('subjectConfiguration').style.display = 'block';
     document.getElementById('teacherConfiguration').style.display = 'block';
     setupSubjectTabs(count);
-    initTeacherSpecialization(); // No longer needs a count
+    initTeacherSpecialization();
 }
 
 function setupSubjectTabs(sectionCount) {
@@ -197,21 +191,16 @@ function setupSectionSubjects(sectionNum) {
     for (let i = 1; i <= labCount; i++) createSubjectInput('lab', i, 'Lab');
 }
 
-/**
- * FEATURE: This new function adds a single teacher field to the list.
- * It can be called with data (on load) or without (when user clicks '+').
- */
 function addTeacherField(teacherData = null) {
     const teacherList = document.getElementById('teacherList');
-    // Generate a unique ID for the new teacher field
     const teacherId = Date.now(); 
 
     const allSubjects = getAllSubjects();
     const subjectOptions = `<option value="">None</option>` + allSubjects.map(subj => `<option value="${subj}">${subj}</option>`).join('');
     
     const teacherDiv = document.createElement('div');
-    teacherDiv.className = 'teacher-input-group'; // New class for styling
-    teacherDiv.dataset.teacherId = teacherId; // Store the unique ID
+    teacherDiv.className = 'teacher-input-group';
+    teacherDiv.dataset.teacherId = teacherId;
 
     teacherDiv.innerHTML = `
         <div class="teacher-header">
@@ -227,26 +216,20 @@ function addTeacherField(teacherData = null) {
         </div>`;
     teacherList.appendChild(teacherDiv);
 
-    // If we're loading data, pre-fill the fields
     if (teacherData) {
         teacherDiv.querySelector(`#teacher${teacherId}_name`).value = teacherData.name;
         teacherDiv.querySelector(`#teacher${teacherId}_subject1`).value = teacherData.subjects[0] || '';
         teacherDiv.querySelector(`#teacher${teacherId}_subject2`).value = teacherData.subjects[1] || '';
         teacherDiv.querySelector(`#teacher${teacherId}_subject3`).value = teacherData.subjects[2] || '';
     } else {
-        // Default name for a new field
         const teacherCount = teacherList.children.length;
         teacherDiv.querySelector(`#teacher${teacherId}_name`).value = `Teacher ${teacherCount}`;
     }
 }
 
-/**
- * MODIFIED: No longer needs a count. It just clears and repopulates from the global `teachers` array.
- */
 function initTeacherSpecialization() {
     const teacherList = document.getElementById('teacherList');
     teacherList.innerHTML = '';
-    // If teachers data already exists (from a load), create fields for them
     if (teachers && teachers.length > 0) {
         teachers.forEach(teacher => addTeacherField(teacher));
     }
@@ -279,9 +262,11 @@ function generateTimetable() {
             });
             
             document.getElementById('timetableCard').style.display = 'block';
-            document.getElementById('teachersCard').style.display = 'block';
+            // REMOVED: The following two lines are commented out to prevent errors
+            // document.getElementById('teachersCard').style.display = 'block';
+            // displayTeachers(); 
+            
             if (sections.length > 0) displayTimetable(sections[0].id); 
-            displayTeachers();
             updateStats();
 
         } catch (error) {
@@ -303,7 +288,6 @@ function isSubjectOnDay(subjectName, day, grid) {
     }
     return false;
 }
-
 
 function generateSectionTimetable(sectionId) {
     const grid = Array(5).fill(null).map(() => Array(8).fill(null)); 
@@ -337,7 +321,6 @@ function generateSectionTimetable(sectionId) {
         }
     });
 
-    // DEFINITIVE FIX: Logic to fill ALL empty periods, relaxing daily limit if necessary.
     const totalSubjectCount = sectionSubjects.major.length + sectionSubjects.minor.length + sectionSubjects.labs.length;
     if (totalSubjectCount > 10 && majorSubjectNames.length > 0) {
         const remainingSlots = [];
@@ -352,22 +335,17 @@ function generateSectionTimetable(sectionId) {
         remainingSlots.forEach(({ day, period }) => {
             const leastAssignedMajor = majorSubjectNames.sort((a, b) => majorSubjectCounts[a] - majorSubjectCounts[b])[0];
             
-            // Step 1: Try to find a teacher within normal limits
             let teacher = findAvailableTeacher(leastAssignedMajor, day, period, false, false);
             
-            // Step 2: If no one is found, try again but relax the daily limit (LAST RESORT)
             if (!teacher) {
                 teacher = findAvailableTeacher(leastAssignedMajor, day, period, false, true);
             }
             
-            // If a teacher is found (either normally or with relaxed limits), place the subject
             if (teacher) {
                 grid[day][period] = { subject: leastAssignedMajor, teacher: teacher.name, teacherId: teacher.id };
                 teacher.assignedPeriods++;
                 teacher.dailyLoad[day]++;
                 majorSubjectCounts[leastAssignedMajor]++;
-            } else {
-                 console.log(`Could not find any teacher for ${leastAssignedMajor} on Day ${day}, Period ${period}. Period will remain free.`);
             }
         });
     }
@@ -410,10 +388,8 @@ function placeSubject(subjectName, count, grid, availableSlots, isLab) {
     return placedCount > 0; 
 }
 
-// DEFINITIVE FIX: Added a new parameter 'relaxDailyLimit'
 function findAvailableTeacher(subjectName, day, period, isLab, relaxDailyLimit = false) {
     const eligibleTeachers = teachers.filter(t => {
-        // This is the new, more flexible daily limit check
         const dailyLimit = relaxDailyLimit ? t.maxPeriodsPerDay + 1 : t.maxPeriodsPerDay;
         
         const hasSubject = t.subjects.includes(subjectName);
@@ -486,20 +462,24 @@ function displayTimetable(sectionId) {
     }
 }
 
+// REMOVED: This function is no longer called, but is kept in case you want to re-enable it later.
 function displayTeachers() {
     const teachersList = document.getElementById('teachersList');
-    teachersList.innerHTML = '';
-    teachers.forEach(teacher => {
-        const teacherCard = document.createElement('div');
-        teacherCard.className = 'teacher-card';
-        teacherCard.innerHTML = `
-            <div class="teacher-avatar">${teacher.name.charAt(0)}</div>
-            <div class="teacher-info">
-                <h3>${teacher.name} (${teacher.assignedPeriods}/${teacher.maxPeriodsPerWeek})</h3>
-                <div>${teacher.subjects.map((s, i) => `<span class="subject-badge">P${i+1}: ${s}</span>`).join('')}</div>
-            </div>`;
-        teachersList.appendChild(teacherCard);
-    });
+    // Check if the element exists before trying to modify it
+    if (teachersList) {
+        teachersList.innerHTML = '';
+        teachers.forEach(teacher => {
+            const teacherCard = document.createElement('div');
+            teacherCard.className = 'teacher-card';
+            teacherCard.innerHTML = `
+                <div class="teacher-avatar">${teacher.name.charAt(0)}</div>
+                <div class="teacher-info">
+                    <h3>${teacher.name} (${teacher.assignedPeriods}/${teacher.maxPeriodsPerWeek})</h3>
+                    <div>${teacher.subjects.map((s, i) => `<span class="subject-badge">P${i+1}: ${s}</span>`).join('')}</div>
+                </div>`;
+            teachersList.appendChild(teacherCard);
+        });
+    }
 }
 
 function updateStats() {
@@ -553,9 +533,10 @@ async function loadFromFirebase() {
             updateUIWithLoadedData();
             if (Object.keys(timetable).length > 0 && sections.length > 0) {
                 document.getElementById('timetableCard').style.display = 'block';
-                document.getElementById('teachersCard').style.display = 'block';
+                // REMOVED: The following two lines are commented out to prevent errors
+                // document.getElementById('teachersCard').style.display = 'block';
+                // displayTeachers();
                 displayTimetable(sections[0].id);
-                displayTeachers();
                 updateStats();
             }
         } else {
@@ -603,6 +584,5 @@ function updateUIWithLoadedData() {
             populateInputs('lab', sectionSubjects.labs);
         }
     });
-    // MODIFIED: This now populates the dynamic teacher list from loaded data
     initTeacherSpecialization();
 }
