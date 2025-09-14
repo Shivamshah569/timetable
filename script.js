@@ -262,6 +262,9 @@ function generateTimetable() {
             });
             
             document.getElementById('timetableCard').style.display = 'block';
+            // REMOVED: The following two lines are commented out to prevent errors
+            // document.getElementById('teachersCard').style.display = 'block';
+            // displayTeachers(); 
             
             if (sections.length > 0) displayTimetable(sections[0].id); 
             updateStats();
@@ -286,22 +289,18 @@ function isSubjectOnDay(subjectName, day, grid) {
     return false;
 }
 
-
 function generateSectionTimetable(sectionId) {
     const grid = Array(5).fill(null).map(() => Array(8).fill(null)); 
     let availableSlots = [];
     for (let day = 0; day < 5; day++) for (let period = 0; period < 8; period++) availableSlots.push({ day, period });
 
-    
-    const subjectTeacherMap = {};
-
     const sectionSubjects = subjects[sectionId];
     
-    sectionSubjects.labs.forEach(lab => placeSubject(lab.name, 1, grid, availableSlots, true, subjectTeacherMap));
+    sectionSubjects.labs.forEach(lab => placeSubject(lab.name, 1, grid, availableSlots, true));
     const mentorSubject = sectionSubjects.minor.find(s => s.name.toLowerCase().includes('mentor'));
-    if (mentorSubject) placeSubject(mentorSubject.name, 1, grid, availableSlots, false, subjectTeacherMap);
+    if (mentorSubject) placeSubject(mentorSubject.name, 1, grid, availableSlots, false);
     const otherMinors = sectionSubjects.minor.filter(s => !s.name.toLowerCase().includes('mentor'));
-    otherMinors.forEach(minor => placeSubject(minor.name, 2, grid, availableSlots, false, subjectTeacherMap));
+    otherMinors.forEach(minor => placeSubject(minor.name, 2, grid, availableSlots, false));
     
     const majorSubjectNames = sectionSubjects.major.map(m => m.name);
     const majorSubjectCounts = {};
@@ -313,7 +312,7 @@ function generateSectionTimetable(sectionId) {
             const sortedMajors = majorSubjectNames.sort((a, b) => majorSubjectCounts[a] - majorSubjectCounts[b]);
             for (const subjectName of sortedMajors) {
                 if (!isSubjectOnDay(subjectName, day, grid)) {
-                    if (placeSubject(subjectName, 1, grid, availableSlots, false, subjectTeacherMap)) {
+                    if (placeSubject(subjectName, 1, grid, availableSlots, false)) {
                         majorSubjectCounts[subjectName]++;
                         break; 
                     }
@@ -334,24 +333,19 @@ function generateSectionTimetable(sectionId) {
         }
         
         remainingSlots.forEach(({ day, period }) => {
-            const sortedMajors = majorSubjectNames.sort((a, b) => majorSubjectCounts[a] - majorSubjectCounts[b]);
+            const leastAssignedMajor = majorSubjectNames.sort((a, b) => majorSubjectCounts[a] - majorSubjectCounts[b])[0];
             
+            let teacher = findAvailableTeacher(leastAssignedMajor, day, period, false, false);
             
-            for (const subjectToPlace of sortedMajors) {
-                if (!isSubjectOnDay(subjectToPlace, day, grid)) {
-                    let teacher = findAvailableTeacher(subjectToPlace, day, period, false, false, subjectTeacherMap);
-                    if (!teacher) {
-                        teacher = findAvailableTeacher(subjectToPlace, day, period, false, true, subjectTeacherMap);
-                    }
-                    if (teacher) {
-                        grid[day][period] = { subject: subjectToPlace, teacher: teacher.name, teacherId: teacher.id };
-                        teacher.assignedPeriods++;
-                        teacher.dailyLoad[day]++;
-                        majorSubjectCounts[subjectToPlace]++;
-                        
-                        break; 
-                    }
-                }
+            if (!teacher) {
+                teacher = findAvailableTeacher(leastAssignedMajor, day, period, false, true);
+            }
+            
+            if (teacher) {
+                grid[day][period] = { subject: leastAssignedMajor, teacher: teacher.name, teacherId: teacher.id };
+                teacher.assignedPeriods++;
+                teacher.dailyLoad[day]++;
+                majorSubjectCounts[leastAssignedMajor]++;
             }
         });
     }
@@ -360,7 +354,7 @@ function generateSectionTimetable(sectionId) {
 }
 
 
-function placeSubject(subjectName, count, grid, availableSlots, isLab, subjectTeacherMap) {
+function placeSubject(subjectName, count, grid, availableSlots, isLab) {
     let placedCount = 0;
     for (let i = 0; i < count; i++) {
         let placedThisIteration = false;
@@ -368,9 +362,7 @@ function placeSubject(subjectName, count, grid, availableSlots, isLab, subjectTe
         for (let j = 0; j < availableSlots.length; j++) {
             const { day, period } = availableSlots[j];
             if (grid[day][period]) continue;
-            
-            const teacher = findAvailableTeacher(subjectName, day, period, isLab, false, subjectTeacherMap);
-            
+            const teacher = findAvailableTeacher(subjectName, day, period, isLab, false);
             if (teacher) {
                 if (isLab) {
                     if (period < 7 && (period !== 3) && !grid[day][period + 1]) {
@@ -396,31 +388,15 @@ function placeSubject(subjectName, count, grid, availableSlots, isLab, subjectTe
     return placedCount > 0; 
 }
 
-
-function findAvailableTeacher(subjectName, day, period, isLab, relaxDailyLimit = false, subjectTeacherMap = {}) {
-    
-    const assignedTeacherId = subjectTeacherMap[subjectName];
-
-    if (assignedTeacherId) {
-        const assignedTeacher = teachers.find(t => t.id === assignedTeacherId);
-        if (!assignedTeacher) return null; 
-
-        
-        const dailyLimit = relaxDailyLimit ? assignedTeacher.maxPeriodsPerDay + 1 : assignedTeacher.maxPeriodsPerDay;
-        const workloadOk = assignedTeacher.assignedPeriods < assignedTeacher.maxPeriodsPerWeek && assignedTeacher.dailyLoad[day] < dailyLimit;
-        const labWorkloadOk = isLab ? assignedTeacher.assignedPeriods < (assignedTeacher.maxPeriodsPerWeek - 1) && assignedTeacher.dailyLoad[day] < (dailyLimit - 1) : true;
-        const isFree = !isTeacherBusy(assignedTeacher.id, day, period) && (!isLab || !isTeacherBusy(assignedTeacher.id, day, period + 1));
-        
-        return (workloadOk && labWorkloadOk && isFree) ? assignedTeacher : null;
-    }
-
-    
-    const dailyLimit = relaxDailyLimit ? 4 : 3;
+function findAvailableTeacher(subjectName, day, period, isLab, relaxDailyLimit = false) {
     const eligibleTeachers = teachers.filter(t => {
+        const dailyLimit = relaxDailyLimit ? t.maxPeriodsPerDay + 1 : t.maxPeriodsPerDay;
+        
         const hasSubject = t.subjects.includes(subjectName);
         const workloadOk = t.assignedPeriods < t.maxPeriodsPerWeek && t.dailyLoad[day] < dailyLimit;
         const labWorkloadOk = isLab ? t.assignedPeriods < (t.maxPeriodsPerWeek - 1) && t.dailyLoad[day] < (dailyLimit - 1) : true;
         const isFree = !isTeacherBusy(t.id, day, period) && (!isLab || !isTeacherBusy(t.id, day, period + 1));
+        
         return hasSubject && workloadOk && labWorkloadOk && isFree;
     });
 
@@ -430,25 +406,11 @@ function findAvailableTeacher(subjectName, day, period, isLab, relaxDailyLimit =
     const otherTeachers = eligibleTeachers.filter(t => t.subjects[0] !== subjectName);
     primaryTeachers.sort((a,b) => a.assignedPeriods - b.assignedPeriods);
     otherTeachers.sort((a,b) => a.assignedPeriods - b.assignedPeriods);
-    
-    let bestTeacher = null;
     if (primaryTeachers.length > 0 && (Math.random() < 0.80 || otherTeachers.length === 0)) {
-        bestTeacher = primaryTeachers[0];
-    } else if (otherTeachers.length > 0) {
-        bestTeacher = otherTeachers[0];
-    } else {
-        bestTeacher = primaryTeachers[0] || null;
-    }
-
-   
-    if (bestTeacher) {
-        subjectTeacherMap[subjectName] = bestTeacher.id;
-    }
-    
-    return bestTeacher;
+        return primaryTeachers[0];
+    } 
+    return otherTeachers.length > 0 ? otherTeachers[0] : (primaryTeachers[0] || null);
 }
-
-
 
 function isTeacherBusy(teacherId, day, period) {
     const actualPeriod = period >= 4 ? period + 1 : period;
