@@ -27,7 +27,7 @@ body {
 .container {
     max-width: 1600px;
     margin: 0 auto;
-    padding: 0 1.5rem;
+    padding: 0 3rem;
 }
 
 header {
@@ -358,7 +358,7 @@ tr:hover {
     border-radius: 8px;
 }
 
-/* New Feature Grid to replace old text block */
+
 .feature-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -434,12 +434,8 @@ tr:hover {
 }
 
 
-/* ---
-   NEW STYLES FOR DYNAMIC TEACHER UI & RESPONSIVENESS
-   These rules make the new features work and look correct.
---- */
 
-/* Wrapper for the "Teacher Management" heading */
+
 .config-heading-wrapper {
     display: flex;
     justify-content: space-between;
@@ -451,7 +447,7 @@ tr:hover {
     color: var(--secondary);
 }
 
-/* Container for the "+" button at the bottom of the list */
+
 .add-teacher-container {
     margin-top: 1.5rem;
     padding-top: 1.5rem;
@@ -459,7 +455,7 @@ tr:hover {
     text-align: center;
 }
 
-/* Style for the "Add Teacher" button */
+
 .add-btn {
     background: var(--primary);
     width: auto;
@@ -469,7 +465,7 @@ tr:hover {
     background: var(--secondary);
 }
 
-/* Styles each dynamically added teacher block */
+
 .teacher-input-group {
     background: #fdfdff;
     padding: 1.5rem;
@@ -483,14 +479,14 @@ tr:hover {
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* Header inside each teacher card (label + remove button) */
+
 .teacher-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
 
-/* Style for the remove 'trash' icon button */
+
 .remove-teacher-btn {
     background: transparent;
     border: none;
@@ -507,7 +503,7 @@ tr:hover {
 }
 
 
-/* --- COMPLETE RESPONSIVE FIXES --- */
+
 
 @media (max-width: 768px) {
     .container {
@@ -520,7 +516,7 @@ tr:hover {
         padding: 1.5rem;
     }
     
-    /* Stack main generate/save/load buttons */
+    
     .controls {
         flex-direction: column;
         align-items: stretch;
@@ -537,7 +533,7 @@ tr:hover {
         width: 100%;
     }
 
-    /* Stack configuration controls */
+    
     .config-controls {
         flex-direction: column;
         align-items: stretch;
@@ -546,7 +542,7 @@ tr:hover {
         width: 100%;
     }
     
-    /* This is the key fix: stack the 3-column specialization grid */
+
     .teacher-specialization {
         grid-template-columns: 1fr;
     }
